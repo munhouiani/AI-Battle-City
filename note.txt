@@ -1,0 +1,11 @@
+Design an agent as the player which operates the tank in Battle City.
+Your agent must survive 3 stages.
+Make sure that your agent do not crash the game in N stages. 
+Place the agent program in ai.py. 
+In each iteration, your ai agent need to determine the direction of the tank and whether it will fire a bullet or not according to the map information given by the program.
+The agent cannot slow down the program.
+An agent which operates the tank randomly will be graded as 0.
+You can add objects, functions in class ai_agent or import any basic libraries.
+If you  want to include libraries which require installations, please contact TA to see if the liararies can be used in this project.
+
+
