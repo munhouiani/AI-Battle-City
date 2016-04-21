@@ -105,16 +105,16 @@ class Castle():
 
 class Bonus():
     """ Various power-ups
-	When bonus is spawned, it begins flashing and after some time dissapears
+    When bonus is spawned, it begins flashing and after some time dissapears
 
-	Available bonusses:
-		grenade	: Picking up the grenade power up instantly wipes out ever enemy presently on the screen, including Armor Tanks regardless of how many times you've hit them. You do not, however, get credit for destroying them during the end-stage bonus points.
-		helmet	: The helmet power up grants you a temporary force field that makes you invulnerable to enemy shots, just like the one you begin every stage with.
-		shovel	: The shovel power up turns the walls around your fortress from brick to stone. This makes it impossible for the enemy to penetrate the wall and destroy your fortress, ending the game prematurely. The effect, however, is only temporary, and will wear off eventually.
-		star		: The star power up grants your tank with new offensive power each time you pick one up, up to three times. The first star allows you to fire your bullets as fast as the power tanks can. The second star allows you to fire up to two bullets on the screen at one time. And the third star allows your bullets to destroy the otherwise unbreakable steel walls. You carry this power with you to each new stage until you lose a life.
-		tank		: The tank power up grants you one extra life. The only other way to get an extra life is to score 20000 points.
-		timer		: The timer power up temporarily freezes time, allowing you to harmlessly approach every tank and destroy them until the time freeze wears off.
-	"""
+    Available bonusses:
+        grenade    : Picking up the grenade power up instantly wipes out ever enemy presently on the screen, including Armor Tanks regardless of how many times you've hit them. You do not, however, get credit for destroying them during the end-stage bonus points.
+        helmet    : The helmet power up grants you a temporary force field that makes you invulnerable to enemy shots, just like the one you begin every stage with.
+        shovel    : The shovel power up turns the walls around your fortress from brick to stone. This makes it impossible for the enemy to penetrate the wall and destroy your fortress, ending the game prematurely. The effect, however, is only temporary, and will wear off eventually.
+        star        : The star power up grants your tank with new offensive power each time you pick one up, up to three times. The first star allows you to fire your bullets as fast as the power tanks can. The second star allows you to fire up to two bullets on the screen at one time. And the third star allows your bullets to destroy the otherwise unbreakable steel walls. You carry this power with you to each new stage until you lose a life.
+        tank        : The tank power up grants you one extra life. The only other way to get an extra life is to score 20000 points.
+        timer        : The timer power up temporarily freezes time, allowing you to harmlessly approach every tank and destroy them until the time freeze wears off.
+    """
 
     # bonus types
     (BONUS_GRENADE, BONUS_HELMET, BONUS_SHOVEL, BONUS_STAR, BONUS_TANK, BONUS_TIMER) = range(6)
@@ -375,7 +375,7 @@ class Level():
 
     def __init__(self, level_nr=None):
         """ There are total 35 different levels. If level_nr is larger than 35, loop over
-		to next according level so, for example, if level_nr ir 37, then load level 2 """
+        to next according level so, for example, if level_nr ir 37, then load level 2 """
 
         global sprites
 
@@ -419,10 +419,10 @@ class Level():
 
     def hitTile(self, pos, power=1, sound=False):
         """
-			Hit the tile
-			@param pos Tile's x, y in px
-			@return True if bullet was stopped, False otherwise
-		"""
+            Hit the tile
+            @param pos Tile's x, y in px
+            @return True if bullet was stopped, False otherwise
+        """
 
         global play_sounds, sounds
 
@@ -453,8 +453,8 @@ class Level():
 
     def loadLevel(self, level_nr=1):
         """ Load specified level
-		@return boolean Whether level was loaded
-		"""
+        @return boolean Whether level was loaded
+        """
         filename = "levels/" + str(level_nr)
         if (not os.path.isfile(filename)):
             return False
@@ -503,7 +503,7 @@ class Level():
 
     def updateObstacleRects(self):
         """ Set self.obstacle_rects to all tiles' rects that players can destroy
-		with bullets """
+        with bullets """
 
         global castle
 
@@ -630,8 +630,8 @@ class Tank():
 
     def endSpawning(self):
         """ End spawning
-		Player becomes operational
-		"""
+        Player becomes operational
+        """
         self.state = self.STATE_ALIVE
         gtimer.destroy(self.timer_uuid_spawn_end)
 
@@ -679,9 +679,9 @@ class Tank():
 
     def fire(self, forced=False):
         """ Shoot a bullet
-		@param boolean forced. If false, check whether tank has exceeded his bullet quota. Default: True
-		@return boolean True if bullet was fired, false otherwise
-		"""
+        @param boolean forced. If false, check whether tank has exceeded his bullet quota. Default: True
+        @return boolean True if bullet was fired, false otherwise
+        """
 
         global bullets, labels
 
@@ -722,8 +722,8 @@ class Tank():
 
     def rotate(self, direction, fix_position=True):
         """ Rotate tank
-		rotate, update image and correct position
-		"""
+        rotate, update image and correct position
+        """
         self.direction = direction
 
         if direction == self.DIR_UP:
@@ -765,9 +765,9 @@ class Tank():
 
     def bulletImpact(self, friendly_fire=False, damage=100, tank=None):
         """ Bullet impact
-		Return True if bullet should be destroyed on impact. Only enemy friendly-fire
-		doesn't trigger bullet explosion
-		"""
+        Return True if bullet should be destroyed on impact. Only enemy friendly-fire
+        doesn't trigger bullet explosion
+        """
 
         global play_sounds, sounds
 
@@ -799,9 +799,9 @@ class Tank():
 
     def setParalised(self, paralised=True):
         """ set tank paralise state
-		@param boolean paralised
-		@return None
-		"""
+        @param boolean paralised
+        @return None
+        """
         if self.state != self.STATE_ALIVE:
             gtimer.destroy(self.timer_uuid_paralise)
             return
@@ -1030,7 +1030,7 @@ class Enemy(Tank):
 
     def generatePath(self, direction=None, fix_direction=False):
         """ If direction is specified, try continue that way, otherwise choose at random
-		"""
+        """
 
         all_directions = [self.DIR_UP, self.DIR_RIGHT, self.DIR_DOWN, self.DIR_LEFT]
 
@@ -1355,10 +1355,10 @@ class Game():
 
     def shieldPlayer(self, player, shield=True, duration=None):
         """ Add/remove shield
-		player: player (not enemy)
-		shield: true/false
-		duration: in ms. if none, do not remove shield automatically
-		"""
+        player: player (not enemy)
+        shield: true/false
+        duration: in ms. if none, do not remove shield automatically
+        """
         player.shielded = shield
         if shield:
             player.timer_uuid_shield = gtimer.add(100, lambda: player.toggleShieldImage())
@@ -1370,11 +1370,11 @@ class Game():
 
     def spawnEnemy(self):
         """ Spawn new enemy if needed
-		Only add enemy if:
-			- there are at least one in queue
-			- map capacity hasn't exceeded its quota
-			- now isn't timefreeze
-		"""
+        Only add enemy if:
+            - there are at least one in queue
+            - map capacity hasn't exceeded its quota
+            - now isn't timefreeze
+        """
 
         global enemies
 
@@ -1439,9 +1439,9 @@ class Game():
 
     def showMenu(self):
         """ Show game menu
-		Redraw screen only when up or down key is pressed. When enter is pressed,
-		exit from this screen and start the game with selected number of players
-		"""
+        Redraw screen only when up or down key is pressed. When enter is pressed,
+        exit from this screen and start the game with selected number of players
+        """
 
         global players, screen
 
@@ -1482,8 +1482,8 @@ class Game():
 
     def reloadPlayers(self):
         """ Init players
-		If players already exist, just reset them
-		"""
+        If players already exist, just reset them
+        """
 
         global players
 
@@ -1726,9 +1726,9 @@ class Game():
 
     def drawIntroScreen(self, put_on_surface=True):
         """ Draw intro (menu) screen
-		@param boolean put_on_surface If True, flip display after drawing
-		@return None
-		"""
+        @param boolean put_on_surface If True, flip display after drawing
+        @return None
+        """
 
         global screen
 
@@ -1758,9 +1758,9 @@ class Game():
 
     def animateIntroScreen(self):
         """ Slide intro (menu) screen from bottom to top
-		If Enter key is pressed, finish animation immediately
-		@return None
-		"""
+        If Enter key is pressed, finish animation immediately
+        @return None
+        """
 
         global screen
 
@@ -1787,20 +1787,20 @@ class Game():
 
     def chunks(self, l, n):
         """ Split text string in chunks of specified size
-		@param string l Input string
-		@param int n Size (number of characters) of each chunk
-		@return list
-		"""
+        @param string l Input string
+        @param int n Size (number of characters) of each chunk
+        @return list
+        """
         return [l[i:i + n] for i in range(0, len(l), n)]
 
     def writeInBricks(self, text, pos):
         """ Write specified text in "brick font"
-		Only those letters are available that form words "Battle City" and "Game Over"
-		Both lowercase and uppercase are valid input, but output is always uppercase
-		Each letter consists of 7x7 bricks which is converted into 49 character long string
-		of 1's and 0's which in turn is then converted into hex to save some bytes
-		@return None
-		"""
+        Only those letters are available that form words "Battle City" and "Game Over"
+        Both lowercase and uppercase are valid input, but output is always uppercase
+        Each letter consists of 7x7 bricks which is converted into 49 character long string
+        of 1's and 0's which in turn is then converted into hex to save some bytes
+        @return None
+        """
 
         global screen, sprites
 
@@ -1868,9 +1868,9 @@ class Game():
 
     def loadHiscore(self):
         """ Load hiscore
-		Really primitive version =] If for some reason hiscore cannot be loaded, return 20000
-		@return int
-		"""
+        Really primitive version =] If for some reason hiscore cannot be loaded, return 20000
+        @return int
+        """
         filename = ".hiscore"
         if (not os.path.isfile(filename)):
             return 20000
@@ -1886,8 +1886,8 @@ class Game():
 
     def saveHiscore(self, hiscore):
         """ Save hiscore
-		@return boolean
-		"""
+        @return boolean
+        """
         try:
             f = open(".hiscore", "w")
         except:
@@ -1899,8 +1899,8 @@ class Game():
 
     def finishLevel(self):
         """ Finish current level
-		Show earned scores and advance to the next stage
-		"""
+        Show earned scores and advance to the next stage
+        """
 
         global play_sounds, sounds
 
@@ -1979,7 +1979,7 @@ class Game():
         if p_mapinfo.empty() == True:
             p_mapinfo.put(mapinfo)
 
-        operations = [0, 4]
+        operations = [0, 4, 1]
 
         p = multiprocessing.Process(target=self.agent.operations, args=(p_mapinfo, c_control,))
         p.start()
@@ -2125,11 +2125,16 @@ class Game():
 
             p_mapinfo.put(mapinfo)
 
+            if operations[2] == 0:
+                operations[0] = 0
+                operations[1] = 4
+
             if c_control.empty() != True:
                 try:
                     operations = c_control.get(False)
                 except Queue.Empty:
                     skip_this = True
+
             # ---------------------------------------------
             self.draw()
 
