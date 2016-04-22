@@ -170,15 +170,19 @@ class ai_agent():
             current_pos = pos
         return dir_cmd
 
+    # return [(left, top)] coordinates
     def Find_neighbour(self, top, left, width, height, moving_size):
         allowable_move = []
 
         # rect [top, left, width, height]
-
+        bottom = top - height
+        right = left + width
         # move up
         if top > 0:
             move_up = True
-            temp_rect = pygame.Rect(left, 0 if top - moving_size < 0 else top - moving_size, width, height)
+            new_left = left
+            new_top = 0 if top - moving_size < 0 else top - moving_size
+            temp_rect = pygame.Rect(new_left, new_top, width, height)
             # check collision
             # collide with bullet
             for bullet in self.mapinfo[0]:
@@ -196,12 +200,14 @@ class ai_agent():
                     move_up = False
                     break
             if move_up:
-                allowable_move.append('up')
+                allowable_move.append((new_left, new_top))
 
         # move down
-        if top < 416:
+        if bottom < 416:
             move_down = True
-            temp_rect = pygame.Rect(left, 416 if top + moving_size > 416 else top + moving_size, width, height)
+            new_left = left
+            new_top = 416 - height if bottom + moving_size > 416 else top + moving_size
+            temp_rect = pygame.Rect(new_left, new_top, width, height)
             # check collision
             # collide with bullet
             for bullet in self.mapinfo[0]:
@@ -219,12 +225,14 @@ class ai_agent():
                     move_down = False
                     break
             if move_down:
-                allowable_move.append('down')
+                allowable_move.append((new_left, new_top))
 
         # move left
         if left > 0:
             move_left = True
-            temp_rect = pygame.Rect(0 if left - moving_size < 0 else left - moving_size, top, width, height)
+            new_left = 0 if left - moving_size < 0 else left - moving_size
+            new_top = top
+            temp_rect = pygame.Rect(new_left, new_top, width, height)
             # check collision
             # collide with bullet
             for bullet in self.mapinfo[0]:
