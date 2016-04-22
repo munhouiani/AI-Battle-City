@@ -22,7 +22,8 @@ class PriorityQueue:
 
 class ai_agent():
     mapinfo = []
-    MOVING_SIZE = 16
+    MOVING_SIZE = 8
+
     def __init__(self):
         self.mapinfo = []
         self.screen_rect = pygame.Rect(0, 0, 480, 416)
@@ -44,28 +45,40 @@ class ai_agent():
     # def Update_Strategy	Update your strategy
 
 
+    def calculate_distance(self, rect_1, rect_2):
+        x1 = rect_1.x
+        y1 = rect_1.y
+        x2 = rect_2.x
+        y2 = rect_2.y
+
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
     def operations(self, p_mapinfo, c_control):
 
         while True:
             # -----your ai operation,This code is a random strategy,please design your ai !!-----------------------
             self.Get_mapInfo(p_mapinfo)
-            # print self.mapinfo[3]
-            # time.sleep(0.001)
-            player_top = self.mapinfo[3][0][0].top
-            player_left = self.mapinfo[3][0][0].left
-            moving_speed = self.mapinfo[3][0][2]
+            # if self.mapinfo[1]:
+            #     sorted_enemy = sorted(self.mapinfo[1],
+            #                           key=lambda x: self.calculate_distance(x[0], self.mapinfo[3][0][0]), reverse=True)
+            #     print self.mapinfo[1]
+            #     print sorted_enemy
+            #     print
+
+
+            # activate a_star when enemy appear
             if self.mapinfo[1]:
-                dir_cmd = self.A_Star(self.mapinfo[3][0][0], self.mapinfo[1][0][0])
-                for i in range(0, self.MOVING_SIZE / moving_speed):
-                    self.Update_Strategy(c_control, 0, dir_cmd[0], 0)
-            # q = 0
-            # for i in range(10000000):
-            #     q += 1
-            #
-            # shoot = random.randint(0, 1)
-            # move_dir = random.randint(0, 4)
-            # keep_action = 0
-            keep_action = 1
+                print 'enemy found!'
+                dir_cmd = self.a_star(self.mapinfo[3][0][0], self.mapinfo[1][0][0], self.mapinfo[3][0][2])
+                self.Update_Strategy(c_control, 0, dir_cmd[0], 1)
+                # for cmd in dir_cmd:
+                #     self.Update_Strategy(c_control, 0, cmd, 0)
+                # # print self.mapinfo[3]
+                # time.sleep(0.001)
+
+                q = 0
+                for i in range(10000000):
+                    q += 1
             # -----------
             # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
             # ------------------------------------------------------------------------------------------------------
@@ -84,77 +97,57 @@ class ai_agent():
         else:
             return False
 
-    def A_Star(self, player_rect, enemy_rect):
+    # A* algorithm, return a series of command to reach enemy
+    def a_star(self, start_rect, goal_rect, speed):
+        print 'trigger a*'
+        start = (start_rect.left, start_rect.top)
+        goal = (goal_rect.left, goal_rect.top)
 
-        player_top = player_rect.top
-        player_left = player_rect.left
-
-        enermy_top = enemy_rect.top
-        enermy_left = enemy_rect.left
-
-        start_pos =(player_left, player_top)
         # initialise frontier
         frontier = PriorityQueue()
-        frontier.put(start_pos, 0)
         came_from = {}
         cost_so_far = {}
-        came_from[start_pos] = None
-        cost_so_far[start_pos] = 0
+
+        # put start into frontier
+        frontier.put(start, 0)
+        came_from[start] = None
+        cost_so_far[start] = 0
 
         while not frontier.empty():
-            current_pos = frontier.get()
-
-            current_top = current_pos[1]
-            current_left = current_pos[0]
+            current_left, current_top = frontier.get()
+            current = (current_left, current_top)
 
             # goal test
-            current_rect = pygame.Rect(current_left, current_top, player_rect.width, player_rect.height)
-            if current_rect.colliderect(enemy_rect):
+            temp_rect = pygame.Rect(current_left, current_top, 26, 26)
+            if self.is_goal(temp_rect, goal_rect):
                 break
 
-            # search from neighbour
-            for move in self.Find_neighbour(current_top, current_left, player_rect.width, player_rect.height,
-                                            self.MOVING_SIZE):
-                if move == 'up':
-                    next_top = 0 if current_top - self.MOVING_SIZE < 0 else current_top - self.MOVING_SIZE
-                    next_left = current_left
+            # try every neighbour
+            for next in self.find_neighbour(current_top, current_left, speed):
+                # calculate new cost
+                new_cost = cost_so_far[current] + speed
 
-                elif move == 'down':
-                    next_top = 416 if current_top + self.MOVING_SIZE > 416 else current_top + self.MOVING_SIZE
-                    next_left = current_left
-                elif move == 'left':
-                    next_top = current_top
-                    next_left = 0 if current_left - self.MOVING_SIZE < 0 else current_left - self.MOVING_SIZE
-                elif move == 'right':
-                    next_top = current_top
-                    next_left = 480 if current_left + self.MOVING_SIZE > 480 else current_left + self.MOVING_SIZE
+                # update if next haven't visited or cost more
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    priority = new_cost + self.heuristic(goal, next)
+                    frontier.put(next, priority)
+                    came_from[next] = current
 
-                # treat all cost from one move to another as moving size
-                next_pos = (next_left, next_top)
-                new_cost = cost_so_far[current_pos] + self.MOVING_SIZE
-                if next_pos not in cost_so_far or new_cost < cost_so_far[next_pos]:
-                    cost_so_far[next_pos] = new_cost
-                    # heuristic cost is the euclidean distance from current to next
-                    heuristic_cost = math.sqrt((current_top - next_top) ** 2 + (current_left - next_left) ** 2)
-                    priority = new_cost + heuristic_cost
-                    frontier.put(next_pos, priority)
-                    came_from[next_pos] = current_pos
+        # build path
 
-        # construct path
-        # current_pos = goal_pos
-        path = [current_pos]
-        while current_pos != (player_left, player_top):
-            current_pos = came_from[current_pos]
-            path.append(current_pos)
+        path = [current]
+        while current != start:
+            current = came_from[current]
+            path.append(current)
         path.reverse()
 
+        # build command
         dir_cmd = []
-        current_pos = start_pos
+        current = start
         for pos in path:
-            current_left = current_pos[0]
-            current_top = current_pos[1]
-            pos_left = pos[0]
-            pos_top = pos[1]
+            current_left, current_top = current
+            pos_left, pos_top = pos
             # up
             if pos_top < current_top:
                 dir_cmd.append(0)
@@ -167,112 +160,114 @@ class ai_agent():
             # right
             elif pos_left > current_left:
                 dir_cmd.append(1)
-            current_pos = pos
+            current = pos
+
         return dir_cmd
 
-    # return [(left, top)] coordinates
-    def Find_neighbour(self, top, left, width, height, moving_size):
+
+    # heuristic func, use euclidean dist
+    def heuristic(self, a, b):
+        x1, y1 = a
+        x2, y2 = b
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+    # return True when two rects collide
+    def is_goal(self, rect1, rect2):
+        return rect1.colliderect(rect2)
+
+    # return [(top,left)]
+    # each time move 2px (speed)
+    def find_neighbour(self, top, left, speed):
+
+        # Rect(left, top, width, height)
         allowable_move = []
 
-        # rect [top, left, width, height]
-        bottom = top - height
-        right = left + width
         # move up
-        if top > 0:
+        new_top = top - speed
+        new_left = left
+        if not (new_top < 0):
             move_up = True
-            new_left = left
-            new_top = 0 if top - moving_size < 0 else top - moving_size
-            temp_rect = pygame.Rect(new_left, new_top, width, height)
-            # check collision
-            # collide with bullet
+            temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+
+            # check collision with bullet
             for bullet in self.mapinfo[0]:
                 if temp_rect.colliderect(bullet[0]):
                     move_up = False
                     break
-            # collide with enemy
-            for enemy in self.mapinfo[1]:
-                if temp_rect.colliderect(enemy[0]):
-                    move_up = False
-                    break
-            # collide with tile
+
+            # check collision with tile
             for tile in self.mapinfo[2]:
                 if temp_rect.colliderect(tile[0]):
                     move_up = False
                     break
+
             if move_up:
                 allowable_move.append((new_left, new_top))
 
+        # move right
+        new_top = top
+        new_left = left + speed
+        if not (new_left > (416 - 26)):
+            move_right = True
+            temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+
+            # check collision with bullet
+            for bullet in self.mapinfo[0]:
+                if temp_rect.colliderect(bullet[0]):
+                    move_right = False
+                    break
+
+            # check collision with tile
+            for tile in self.mapinfo[2]:
+                if temp_rect.colliderect(tile[0]):
+                    move_right = False
+                    break
+
+            if move_right:
+                allowable_move.append((new_left, new_top))
+
         # move down
-        if bottom < 416:
+        new_top = top + speed
+        new_left = left
+        if not (new_top > (416 - 26)):
             move_down = True
-            new_left = left
-            new_top = 416 - height if bottom + moving_size > 416 else top + moving_size
-            temp_rect = pygame.Rect(new_left, new_top, width, height)
-            # check collision
-            # collide with bullet
+            temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+
+            # check collision with bullet
             for bullet in self.mapinfo[0]:
                 if temp_rect.colliderect(bullet[0]):
                     move_down = False
                     break
-            # collide with enemy
-            for enemy in self.mapinfo[1]:
-                if temp_rect.colliderect(enemy[0]):
-                    move_down = False
-                    break
-            # collide with tile
+
+            # check collision with tile
             for tile in self.mapinfo[2]:
                 if temp_rect.colliderect(tile[0]):
                     move_down = False
                     break
+
             if move_down:
                 allowable_move.append((new_left, new_top))
 
         # move left
-        if left > 0:
+        new_top = top
+        new_left = left - speed
+        if not (new_left < 0):
             move_left = True
-            new_left = 0 if left - moving_size < 0 else left - moving_size
-            new_top = top
-            temp_rect = pygame.Rect(new_left, new_top, width, height)
-            # check collision
-            # collide with bullet
-            for bullet in self.mapinfo[0]:
-                if temp_rect.colliderect(bullet[0]):
-                    move_left = False
-                    break
-            # collide with enemy
-            for enemy in self.mapinfo[1]:
-                if temp_rect.colliderect(enemy[0]):
-                    move_left = False
-                    break
-            # collide with tile
-            for tile in self.mapinfo[2]:
-                if temp_rect.colliderect(tile[0]):
-                    move_left = False
-                    break
-            if move_left:
-                allowable_move.append('left')
+            temp_rect = pygame.Rect(new_left, new_top, 26, 26)
 
-        # move right
-        if left < 480:
-            move_right = True
-            temp_rect = pygame.Rect(480 if left + moving_size > 480 else left + moving_size, top, width, height)
-            # check collision
-            # collide with bullet
+            # check collision with bullet
             for bullet in self.mapinfo[0]:
                 if temp_rect.colliderect(bullet[0]):
-                    move_right = False
+                    move_left = False
                     break
-            # collide with enemy
-            for enemy in self.mapinfo[1]:
-                if temp_rect.colliderect(enemy[0]):
-                    move_right = False
-                    break
-            # collide with tile
+
+            # check collision with tile
             for tile in self.mapinfo[2]:
                 if temp_rect.colliderect(tile[0]):
-                    move_right = False
+                    move_left = False
                     break
-            if move_right:
-                allowable_move.append('right')
+
+            if move_left:
+                allowable_move.append((new_left, new_top))
 
         return allowable_move
