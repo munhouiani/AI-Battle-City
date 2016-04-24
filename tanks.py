@@ -817,8 +817,8 @@ class Enemy(Tank):
 
         global enemies, sprites
 
-        # pause enemy
-        self.paused = True
+        # # pause enemy
+        # self.paused = True
 
         # if true, do not fire
         self.bullet_queued = False

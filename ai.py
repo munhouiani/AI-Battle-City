@@ -57,24 +57,36 @@ class ai_agent():
             #     print sorted_enemy
             #     print
 
-
+            enemy_rect_list = self.mapinfo[1]
             # activate a_star when enemy appear
-            if self.mapinfo[1]:
+            if enemy_rect_list:
                 print 'enemy found!'
-                dir_cmd = self.a_star(self.mapinfo[3][0][0], self.mapinfo[1][0][0], self.mapinfo[3][0][2])
-                # self.Update_Strategy(c_control, 0, dir_cmd[0], 1)
-                for cmd in dir_cmd:
-                    self.Update_Strategy(c_control, 0, cmd, 0)
+                player_rect = self.mapinfo[3][0][0]
+                enemy_rect = self.mapinfo[1][0][0]
+                player_speed = self.mapinfo[3][0][2]
+                dir_cmd = self.a_star(player_rect, enemy_rect, player_speed)
+                if self.should_fire(player_rect, enemy_rect_list):
+                    shoot = 1
+                else:
+                    shoot = 0
+                if dir_cmd:
+                    self.Update_Strategy(c_control, shoot, dir_cmd[0], 1)
+                # for cmd in dir_cmd:
+                #     if self.should_fire(player_rect, enemy_rect_list):
+                #         shoot = 1
+                #     else:
+                #         shoot = 0
+                #     self.Update_Strategy(c_control, shoot, cmd, 0)
 
-                # # print self.mapinfo[3]
-                # time.sleep(0.001)
+                    # # print self.mapinfo[3]
+                    # time.sleep(0.001)
 
-                # q = 0
-                # for i in range(10000000):
-                #     q += 1
-            # -----------
-            # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
-            # ------------------------------------------------------------------------------------------------------
+                    # q = 0
+                    # for i in range(10000000):
+                    #     q += 1
+                    # -----------
+                    # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
+                    # ------------------------------------------------------------------------------------------------------
 
     def Get_mapInfo(self, p_mapinfo):
         if p_mapinfo.empty() != True:
@@ -89,6 +101,17 @@ class ai_agent():
             return True
         else:
             return False
+
+    def should_fire(self, player_rect, enemy_rect_list):
+        for enemy_rect in enemy_rect_list:
+            player_center_x, player_center_y = player_rect.center
+            enemy_top = enemy_rect[0].top
+            enemy_bottom = enemy_rect[0].bottom
+            enemy_left = enemy_rect[0].left
+            enemy_right = enemy_rect[0].right
+            if (player_center_x >= enemy_left and player_center_x <= enemy_right) \
+                    or (player_center_y >= enemy_top and player_center_y <= enemy_bottom):
+                return True
 
     # A* algorithm, return a series of command to reach enemy
     def a_star(self, start_rect, goal_rect, speed):
@@ -157,11 +180,10 @@ class ai_agent():
 
         return dir_cmd
 
-
     def manhattan_distance(self, a, b):
         x1, y1 = a
         x2, y2 = b
-        return abs(x1-x2) + abs(y1-y2)
+        return abs(x1 - x2) + abs(y1 - y2)
 
     def euclidean_distance(self, a, b):
         x1, y1 = a
