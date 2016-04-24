@@ -45,14 +45,6 @@ class ai_agent():
     # def Update_Strategy	Update your strategy
 
 
-    def calculate_distance(self, rect_1, rect_2):
-        x1 = rect_1.x
-        y1 = rect_1.y
-        x2 = rect_2.x
-        y2 = rect_2.y
-
-        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
     def operations(self, p_mapinfo, c_control):
 
         while True:
@@ -70,15 +62,16 @@ class ai_agent():
             if self.mapinfo[1]:
                 print 'enemy found!'
                 dir_cmd = self.a_star(self.mapinfo[3][0][0], self.mapinfo[1][0][0], self.mapinfo[3][0][2])
-                self.Update_Strategy(c_control, 0, dir_cmd[0], 1)
-                # for cmd in dir_cmd:
-                #     self.Update_Strategy(c_control, 0, cmd, 0)
+                # self.Update_Strategy(c_control, 0, dir_cmd[0], 1)
+                for cmd in dir_cmd:
+                    self.Update_Strategy(c_control, 0, cmd, 0)
+
                 # # print self.mapinfo[3]
                 # time.sleep(0.001)
 
-                q = 0
-                for i in range(10000000):
-                    q += 1
+                # q = 0
+                # for i in range(10000000):
+                #     q += 1
             # -----------
             # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
             # ------------------------------------------------------------------------------------------------------
@@ -165,11 +158,19 @@ class ai_agent():
         return dir_cmd
 
 
-    # heuristic func, use euclidean dist
-    def heuristic(self, a, b):
+    def manhattan_distance(self, a, b):
+        x1, y1 = a
+        x2, y2 = b
+        return abs(x1-x2) + abs(y1-y2)
+
+    def euclidean_distance(self, a, b):
         x1, y1 = a
         x2, y2 = b
         return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+    # heuristic func, use euclidean dist
+    def heuristic(self, a, b):
+        return self.manhattan_distance(a, b)
 
     # return True when two rects collide
     def is_goal(self, rect1, rect2):
@@ -197,9 +198,11 @@ class ai_agent():
 
             # check collision with tile
             for tile in self.mapinfo[2]:
-                if temp_rect.colliderect(tile[0]):
-                    move_up = False
-                    break
+                # not a grass tile
+                if tile[1] != 4:
+                    if temp_rect.colliderect(tile[0]):
+                        move_up = False
+                        break
 
             if move_up:
                 allowable_move.append((new_left, new_top))
@@ -219,9 +222,11 @@ class ai_agent():
 
             # check collision with tile
             for tile in self.mapinfo[2]:
-                if temp_rect.colliderect(tile[0]):
-                    move_right = False
-                    break
+                # not a grass tile
+                if tile[1] != 4:
+                    if temp_rect.colliderect(tile[0]):
+                        move_right = False
+                        break
 
             if move_right:
                 allowable_move.append((new_left, new_top))
@@ -241,9 +246,11 @@ class ai_agent():
 
             # check collision with tile
             for tile in self.mapinfo[2]:
-                if temp_rect.colliderect(tile[0]):
-                    move_down = False
-                    break
+                # not a grass tile
+                if tile[1] != 4:
+                    if temp_rect.colliderect(tile[0]):
+                        move_down = False
+                        break
 
             if move_down:
                 allowable_move.append((new_left, new_top))
@@ -263,9 +270,11 @@ class ai_agent():
 
             # check collision with tile
             for tile in self.mapinfo[2]:
-                if temp_rect.colliderect(tile[0]):
-                    move_left = False
-                    break
+                # not a grass tile
+                if tile[1] != 4:
+                    if temp_rect.colliderect(tile[0]):
+                        move_left = False
+                        break
 
             if move_left:
                 allowable_move.append((new_left, new_top))
