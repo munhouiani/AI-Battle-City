@@ -63,12 +63,7 @@ class ai_agent():
                     shoot = 1
                 else:
                     shoot = 0
-                i = 0
-                for cmd in dir_cmd:
-                    if i > 3:
-                        break
-                    self.Update_Strategy(c_control, shoot, cmd, 0)
-                    i += 1
+                self.Update_Strategy(c_control, shoot, dir_cmd[0], 0)
                 # for cmd in dir_cmd:
                 #     if self.should_fire(player_rect, enemy_rect_list):
                 #         shoot = 1
@@ -102,14 +97,15 @@ class ai_agent():
 
     def should_fire(self, player_rect, enemy_rect_list):
         for enemy_rect in enemy_rect_list:
-            player_center_x, player_center_y = player_rect.center
-            enemy_top = enemy_rect[0].top
-            enemy_bottom = enemy_rect[0].bottom
-            enemy_left = enemy_rect[0].left
-            enemy_right = enemy_rect[0].right
-            if (player_center_x >= enemy_left and player_center_x <= enemy_right) \
-                    or (player_center_y >= enemy_top and player_center_y <= enemy_bottom):
-                return True
+            return self.inline_with_enemy(player_rect, enemy_rect[0])
+            # player_center_x, player_center_y = player_rect.center
+            # enemy_top = enemy_rect[0].top
+            # enemy_bottom = enemy_rect[0].bottom
+            # enemy_left = enemy_rect[0].left
+            # enemy_right = enemy_rect[0].right
+            # if (player_center_x >= enemy_left and player_center_x <= enemy_right) \
+            #         or (player_center_y >= enemy_top and player_center_y <= enemy_bottom):
+            #     return True
 
     # A* algorithm, return a series of command to reach enemy
     def a_star(self, start_rect, goal_rect, speed):
