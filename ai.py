@@ -22,11 +22,10 @@ class PriorityQueue:
 
 class ai_agent():
     mapinfo = []
-    MOVING_SIZE = 8
-
+    # castle rect
+    castle = pygame.Rect(12 * 16, 24 * 16, 32, 32)
     def __init__(self):
         self.mapinfo = []
-        self.screen_rect = pygame.Rect(0, 0, 480, 416)
 
     # rect:					[left, top, width, height]
     # rect_type:			0:empty 1:brick 2:steel 3:water 4:grass 5:froze
@@ -50,27 +49,26 @@ class ai_agent():
         while True:
             # -----your ai operation,This code is a random strategy,please design your ai !!-----------------------
             self.Get_mapInfo(p_mapinfo)
-            # if self.mapinfo[1]:
-            #     sorted_enemy = sorted(self.mapinfo[1],
-            #                           key=lambda x: self.calculate_distance(x[0], self.mapinfo[3][0][0]), reverse=True)
-            #     print self.mapinfo[1]
-            #     print sorted_enemy
-            #     print
+            sorted_enemy = sorted(self.mapinfo[1], key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12*16, 24*16)))
 
             enemy_rect_list = self.mapinfo[1]
             # activate a_star when enemy appear
-            if enemy_rect_list:
-                print 'enemy found!'
+            if sorted_enemy:
+                # print 'enemy found!'
                 player_rect = self.mapinfo[3][0][0]
-                enemy_rect = self.mapinfo[1][0][0]
+                enemy_rect = sorted_enemy[0][0]
                 player_speed = self.mapinfo[3][0][2]
                 dir_cmd = self.a_star(player_rect, enemy_rect, player_speed)
                 if self.should_fire(player_rect, enemy_rect_list):
                     shoot = 1
                 else:
                     shoot = 0
-                if dir_cmd:
-                    self.Update_Strategy(c_control, shoot, dir_cmd[0], 1)
+                i = 0
+                for cmd in dir_cmd:
+                    if i > 3:
+                        break
+                    self.Update_Strategy(c_control, shoot, cmd, 0)
+                    i += 1
                 # for cmd in dir_cmd:
                 #     if self.should_fire(player_rect, enemy_rect_list):
                 #         shoot = 1
@@ -81,9 +79,9 @@ class ai_agent():
                     # # print self.mapinfo[3]
                     # time.sleep(0.001)
 
-                    q = 0
-                    for i in range(10000000):
-                        q += 1
+                    # q = 0
+                    # for i in range(10000000):
+                    #     q += 1
                     # -----------
                     # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
                     # ------------------------------------------------------------------------------------------------------
@@ -115,7 +113,9 @@ class ai_agent():
 
     # A* algorithm, return a series of command to reach enemy
     def a_star(self, start_rect, goal_rect, speed):
-        print 'trigger a*'
+        # print 'trigger a*'
+        bound = 300
+        current_iteration = 0
         start = (start_rect.left, start_rect.top)
         goal = (goal_rect.left, goal_rect.top)
 
@@ -129,7 +129,8 @@ class ai_agent():
         came_from[start] = None
         cost_so_far[start] = 0
 
-        while not frontier.empty():
+        while not frontier.empty() and current_iteration < bound:
+            current_iteration += 1
             current_left, current_top = frontier.get()
             current = (current_left, current_top)
 
@@ -196,15 +197,15 @@ class ai_agent():
 
     # return True when two rects collide
     def is_goal(self, rect1, rect2):
-        center_x1, center_y1 = rect1.center
+        # center_x1, center_y1 = rect1.center
         # if rect1.colliderect(rect2) and \
         #         ((rect2.left <= center_x1 <= rect2.left + rect2.width) \
         #                  or (rect2.top <= center_y1 <= rect2.top + rect2.height)):
         #     return True
         # else:
         #     return False
-            # return rect1.colliderect(rect2)
-        return self.inline_with_enemy(rect1, rect2) or rect1.colliderect(rect2)
+        return rect1.colliderect(rect2)
+        # return self.inline_with_enemy(rect1, rect2) or rect1.colliderect(rect2)
 
     # return [(top,left)]
     # each time move 2px (speed)
