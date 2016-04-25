@@ -81,9 +81,9 @@ class ai_agent():
                     # # print self.mapinfo[3]
                     # time.sleep(0.001)
 
-                    # q = 0
-                    # for i in range(10000000):
-                    #     q += 1
+                    q = 0
+                    for i in range(10000000):
+                        q += 1
                     # -----------
                     # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
                     # ------------------------------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ class ai_agent():
                 break
 
             # try every neighbour
-            for next in self.find_neighbour(current_top, current_left, speed):
+            for next in self.find_neighbour(current_top, current_left, speed, goal_rect):
                 # calculate new cost
                 new_cost = cost_so_far[current] + speed
 
@@ -196,11 +196,19 @@ class ai_agent():
 
     # return True when two rects collide
     def is_goal(self, rect1, rect2):
-        return rect1.colliderect(rect2)
+        center_x1, center_y1 = rect1.center
+        # if rect1.colliderect(rect2) and \
+        #         ((rect2.left <= center_x1 <= rect2.left + rect2.width) \
+        #                  or (rect2.top <= center_y1 <= rect2.top + rect2.height)):
+        #     return True
+        # else:
+        #     return False
+            # return rect1.colliderect(rect2)
+        return self.inline_with_enemy(rect1, rect2) or rect1.colliderect(rect2)
 
     # return [(top,left)]
     # each time move 2px (speed)
-    def find_neighbour(self, top, left, speed):
+    def find_neighbour(self, top, left, speed, goal_rect):
 
         # Rect(left, top, width, height)
         allowable_move = []
@@ -211,6 +219,13 @@ class ai_agent():
         if not (new_top < 0):
             move_up = True
             temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+
+            # check collision with enemy except goal
+            for enemy in self.mapinfo[1]:
+                if enemy[0] is not goal_rect:
+                    if temp_rect.colliderect(enemy[0]):
+                        move_up = False
+                        break
 
             # check collision with bullet
             for bullet in self.mapinfo[0]:
@@ -236,6 +251,13 @@ class ai_agent():
             move_right = True
             temp_rect = pygame.Rect(new_left, new_top, 26, 26)
 
+            # check collision with enemy except goal
+            for enemy in self.mapinfo[1]:
+                if enemy[0] is not goal_rect:
+                    if temp_rect.colliderect(enemy[0]):
+                        move_right = False
+                        break
+
             # check collision with bullet
             for bullet in self.mapinfo[0]:
                 if temp_rect.colliderect(bullet[0]):
@@ -259,6 +281,13 @@ class ai_agent():
         if not (new_top > (416 - 26)):
             move_down = True
             temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+
+            # check collision with enemy except goal
+            for enemy in self.mapinfo[1]:
+                if enemy[0] is not goal_rect:
+                    if temp_rect.colliderect(enemy[0]):
+                        move_down = False
+                        break
 
             # check collision with bullet
             for bullet in self.mapinfo[0]:
@@ -284,6 +313,13 @@ class ai_agent():
             move_left = True
             temp_rect = pygame.Rect(new_left, new_top, 26, 26)
 
+            # check collision with enemy except goal
+            for enemy in self.mapinfo[1]:
+                if enemy[0] is not goal_rect:
+                    if temp_rect.colliderect(enemy[0]):
+                        move_left = False
+                        break
+
             # check collision with bullet
             for bullet in self.mapinfo[0]:
                 if temp_rect.colliderect(bullet[0]):
@@ -302,3 +338,38 @@ class ai_agent():
                 allowable_move.append((new_left, new_top))
 
         return allowable_move
+
+    def inline_with_enemy(self, player_rect, enemy_rect):
+        player_center_x, player_center_y = player_rect.center
+        enemy_top = enemy_rect.top
+        enemy_bottom = enemy_rect.bottom
+        enemy_left = enemy_rect.left
+        enemy_right = enemy_rect.right
+
+        # player_center is inline with enemy
+        inline = False
+        if enemy_left <= player_center_x <= enemy_right:
+            inline = True
+            # no item between player_center and enemey
+            for tile in self.mapinfo[1]:
+                # not a grass tile
+                if tile[1] != 4:
+                    tile_left = tile[0].left
+                    tile_right = tile[0].right
+                    if tile_left <= player_center_x <= tile_right:
+                        inline = False
+                        break
+        elif enemy_top <= player_center_y <= enemy_bottom:
+            inline = True
+            # no item between player_center and enemey
+            for tile in self.mapinfo[1]:
+                # not a grass tile
+                if tile[1] != 4:
+                    tile_top = tile[0].top
+                    tile_bottom = tile[0].bottom
+                    if tile_top <= player_center_y <= tile_bottom:
+                        inline = False
+                        break
+
+        return inline
+
