@@ -24,6 +24,7 @@ class ai_agent():
     mapinfo = []
     # castle rect
     castle = pygame.Rect(12 * 16, 24 * 16, 32, 32)
+
     def __init__(self):
         self.mapinfo = []
 
@@ -49,7 +50,8 @@ class ai_agent():
         while True:
             # -----your ai operation,This code is a random strategy,please design your ai !!-----------------------
             self.Get_mapInfo(p_mapinfo)
-            sorted_enemy = sorted(self.mapinfo[1], key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12*16, 24*16)))
+            sorted_enemy = sorted(self.mapinfo[1],
+                                  key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12 * 16, 24 * 16)))
 
             enemy_rect_list = self.mapinfo[1]
             # activate a_star when enemy appear
@@ -58,28 +60,22 @@ class ai_agent():
                 player_rect = self.mapinfo[3][0][0]
                 enemy_rect = sorted_enemy[0][0]
                 player_speed = self.mapinfo[3][0][2]
-                dir_cmd = self.a_star(player_rect, enemy_rect, player_speed)
-                if self.should_fire(player_rect, enemy_rect_list):
+                dir_cmd = self.a_star(player_rect, enemy_rect, 6)
+                inline_dir = self.inline_with_enemy(player_rect, enemy_rect)
+                shoot = 0
+                if inline_dir is not False:
                     shoot = 1
-                else:
-                    shoot = 0
-                self.Update_Strategy(c_control, shoot, dir_cmd[0], 0)
-                # for cmd in dir_cmd:
-                #     if self.should_fire(player_rect, enemy_rect_list):
-                #         shoot = 1
-                #     else:
-                #         shoot = 0
-                #     self.Update_Strategy(c_control, shoot, cmd, 0)
-
-                    # # print self.mapinfo[3]
-                    # time.sleep(0.001)
-
-                    # q = 0
-                    # for i in range(10000000):
-                    #     q += 1
-                    # -----------
-                    # self.Update_Strategy(c_control, shoot, move_dir, keep_action)
-                    # ------------------------------------------------------------------------------------------------------
+                    self.Update_Strategy(c_control, shoot, inline_dir, 1)
+                time.sleep(0.005)
+                print dir_cmd
+                if dir_cmd:
+                    self.Update_Strategy(c_control, shoot, dir_cmd[0], 1)
+                    time.sleep(0.005)
+                # if dir_cmd:
+                #     self.Update_Strategy(c_control, 0, dir_cmd[0], 0)
+                # else:
+                #     self.Update_Strategy(c_control, 0, random.randint(0,4), 0)
+                # ------------------------------------------------------------------------------------------------------
 
     def Get_mapInfo(self, p_mapinfo):
         if p_mapinfo.empty() != True:
@@ -97,21 +93,20 @@ class ai_agent():
 
     def should_fire(self, player_rect, enemy_rect_list):
         for enemy_rect in enemy_rect_list:
-            return self.inline_with_enemy(player_rect, enemy_rect[0])
+            if self.inline_with_enemy(player_rect, enemy_rect[0]):
+                return True
             # player_center_x, player_center_y = player_rect.center
             # enemy_top = enemy_rect[0].top
             # enemy_bottom = enemy_rect[0].bottom
             # enemy_left = enemy_rect[0].left
             # enemy_right = enemy_rect[0].right
-            # if (player_center_x >= enemy_left and player_center_x <= enemy_right) \
-            #         or (player_center_y >= enemy_top and player_center_y <= enemy_bottom):
+            # if (enemy_left <= player_center_x <= enemy_right) \
+            #         or (enemy_top <= player_center_y <= enemy_bottom):
             #     return True
 
     # A* algorithm, return a series of command to reach enemy
     def a_star(self, start_rect, goal_rect, speed):
         # print 'trigger a*'
-        bound = 300
-        current_iteration = 0
         start = (start_rect.left, start_rect.top)
         goal = (goal_rect.left, goal_rect.top)
 
@@ -125,8 +120,7 @@ class ai_agent():
         came_from[start] = None
         cost_so_far[start] = 0
 
-        while not frontier.empty() and current_iteration < bound:
-            current_iteration += 1
+        while not frontier.empty():
             current_left, current_top = frontier.get()
             current = (current_left, current_top)
 
@@ -148,32 +142,48 @@ class ai_agent():
                     came_from[next] = current
 
         # build path
-
         path = [current]
+        dir_cmd = []
         while current != start:
+            parent = came_from[current]
+            parent_left, parent_top = parent
+            current_left, current_top = current
+            # up
+            if current_top < parent_top:
+                dir_cmd.append(0)
+            # down
+            elif current_top > parent_top:
+                dir_cmd.append(2)
+            # left
+            elif current_left < parent_left:
+                dir_cmd.append(3)
+            # right
+            elif current_left > parent_left:
+                dir_cmd.append(1)
             current = came_from[current]
             path.append(current)
         path.reverse()
+        dir_cmd.reverse()
 
-        # build command
-        dir_cmd = []
-        current = start
-        for pos in path:
-            current_left, current_top = current
-            pos_left, pos_top = pos
-            # up
-            if pos_top < current_top:
-                dir_cmd.append(0)
-            # down
-            elif pos_top > current_top:
-                dir_cmd.append(2)
-            # left
-            elif pos_left < current_left:
-                dir_cmd.append(3)
-            # right
-            elif pos_left > current_left:
-                dir_cmd.append(1)
-            current = pos
+        # # build command
+        # dir_cmd = []
+        # current = start
+        # for pos in path:
+        #     current_left, current_top = current
+        #     pos_left, pos_top = pos
+        #     # up
+        #     if pos_top < current_top:
+        #         dir_cmd.append(0)
+        #     # down
+        #     elif pos_top > current_top:
+        #         dir_cmd.append(2)
+        #     # left
+        #     elif pos_left < current_left:
+        #         dir_cmd.append(3)
+        #     # right
+        #     elif pos_left > current_left:
+        #         dir_cmd.append(1)
+        #     current = pos
 
         return dir_cmd
 
@@ -337,36 +347,53 @@ class ai_agent():
         return allowable_move
 
     def inline_with_enemy(self, player_rect, enemy_rect):
-        player_center_x, player_center_y = player_rect.center
-        enemy_top = enemy_rect.top
-        enemy_bottom = enemy_rect.bottom
-        enemy_left = enemy_rect.left
-        enemy_right = enemy_rect.right
-
-        # player_center is inline with enemy
-        inline = False
-        if enemy_left <= player_center_x <= enemy_right:
-            inline = True
-            # no item between player_center and enemey
-            for tile in self.mapinfo[1]:
-                # not a grass tile
-                if tile[1] != 4:
-                    tile_left = tile[0].left
-                    tile_right = tile[0].right
-                    if tile_left <= player_center_x <= tile_right:
-                        inline = False
-                        break
-        elif enemy_top <= player_center_y <= enemy_bottom:
-            inline = True
-            # no item between player_center and enemey
-            for tile in self.mapinfo[1]:
-                # not a grass tile
-                if tile[1] != 4:
-                    tile_top = tile[0].top
-                    tile_bottom = tile[0].bottom
-                    if tile_top <= player_center_y <= tile_bottom:
-                        inline = False
-                        break
-
-        return inline
+        # horizontal inline
+        if enemy_rect.top <= player_rect.centery <= enemy_rect.bottom:
+            # enemy on left
+            if enemy_rect.right <= player_rect.left:
+                # check any tile in between
+                for tile in self.mapinfo[2]:
+                    # not a grass or water tile
+                    if tile[1] != 4 or tile[1] != 3:
+                        # tile is between player and enemy
+                        if enemy_rect.right <= tile[0].left and tile[0].right <= player_rect.left:
+                            if tile[0].top <= player_rect.centery <= tile[0].bottom:
+                                return False
+                return 3
+            # enemy on right
+            elif player_rect.right <= enemy_rect.right:
+                # check any tile in between
+                for tile in self.mapinfo[2]:
+                    # not a grass or water tile
+                    if tile[1] != 4 or tile[1] != 3:
+                        # tile is between player and enemy
+                        if player_rect.right <= tile[0].left and tile[0].right <= enemy_rect.left:
+                            if tile[0].top <= player_rect.centery <= tile[0].bottom:
+                                return False
+                return 1
+        # vertically inline
+        elif enemy_rect.left <= player_rect.centerx <= enemy_rect.right:
+            # enemy on top
+            if enemy_rect.bottom <= player_rect.top:
+                # check any tile in between
+                for tile in self.mapinfo[2]:
+                    # not a grass or water tile
+                    if tile[1] != 4 or tile[1] != 3:
+                        # tile is between player and enemy
+                        if enemy_rect.bottom <= tile[0].top and tile[0].bottom <= player_rect.top:
+                            if tile[0].left <= player_rect.centerx <= tile[0].right:
+                                return False
+                return 0
+            # enemy on bottom
+            elif player_rect.bottom <= enemy_rect.top:
+                # check any tile in between
+                for tile in self.mapinfo[2]:
+                    # not a grass or water tile
+                    if tile[1] != 4 or tile[1] != 3:
+                        # tile is between player and enemy
+                        if player_rect.bottom <= tile[0].top and tile[0].bottom <= enemy_rect.top:
+                            if tile[0].left <= player_rect.centerx <= tile[0].right:
+                                return False
+                return 2
+        return False
 
