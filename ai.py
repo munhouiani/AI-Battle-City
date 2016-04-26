@@ -60,17 +60,17 @@ class ai_agent():
                 player_rect = self.mapinfo[3][0][0]
                 enemy_rect = sorted_enemy[0][0]
                 player_speed = self.mapinfo[3][0][2]
-                dir_cmd = self.a_star(player_rect, enemy_rect, 6)
+                dir_cmd = self.a_star(player_rect, enemy_rect, 4)
                 inline_dir = self.inline_with_enemy(player_rect, enemy_rect)
                 shoot = 0
                 if inline_dir is not False:
                     shoot = 1
                     self.Update_Strategy(c_control, shoot, inline_dir, 1)
-                time.sleep(0.005)
+                    pygame.time.Clock().tick(50)
                 print dir_cmd
                 if dir_cmd:
                     self.Update_Strategy(c_control, shoot, dir_cmd[0], 1)
-                    time.sleep(0.005)
+                    pygame.time.Clock().tick(50)
                 # if dir_cmd:
                 #     self.Update_Strategy(c_control, 0, dir_cmd[0], 0)
                 # else:
@@ -210,8 +210,12 @@ class ai_agent():
         #     return True
         # else:
         #     return False
-        return rect1.colliderect(rect2)
+        # return rect1.colliderect(rect2)
         # return self.inline_with_enemy(rect1, rect2) or rect1.colliderect(rect2)
+        if self.inline_with_enemy(rect1, rect2) is not False:
+            return True
+        else:
+            return False
 
     # return [(top,left)]
     # each time move 2px (speed)
