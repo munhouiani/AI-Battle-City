@@ -54,23 +54,25 @@ class ai_agent():
             sorted_enemy = sorted(self.mapinfo[1],
                                   key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12 * 16, 24 * 16)))
 
-
             # activate a_star when enemy appear
             if sorted_enemy:
                 # print 'enemy found!'
                 enemy_rect = sorted_enemy[0][0]
                 dir_cmd = self.a_star(player_rect, enemy_rect, 6)
+
                 inline_dir = self.inline_with_enemy(player_rect, enemy_rect)
                 shoot = 0
                 if inline_dir is not False:
                     shoot = 1
                     self.Update_Strategy(c_control, shoot, inline_dir, 1)
-                    time.sleep(pygame.time.Clock().tick(50)*0.001)
+                    # time.sleep(pygame.time.Clock().tick(50) * 0.001)
                 print dir_cmd
                 if dir_cmd is not None:
                     self.Update_Strategy(c_control, shoot, dir_cmd, 1)
-                    time.sleep(pygame.time.Clock().tick(50)*0.001)
-                # ------------------------------------------------------------------------------------------------------
+                    if self.mapinfo[0]:
+                        self.bullet_avoidance(self.mapinfo[3][0], self.mapinfo[0], c_control)
+                    # time.sleep(pygame.time.Clock().tick(50) * 0.001)
+                    # ------------------------------------------------------------------------------------------------------
 
     def Get_mapInfo(self, p_mapinfo):
         if p_mapinfo.empty() != True:
@@ -196,9 +198,9 @@ class ai_agent():
         #     return True
         # else:
         #     return False
-        # return rect1.colliderect(rect2)
+        return rect1.colliderect(rect2)
         # return self.inline_with_enemy(rect1, rect2) or rect1.colliderect(rect2)
-        if self.inline_with_enemy(rect1, rect2) is not False:
+        if self.inline_with_enemy(rect1, rect2) is not False or rect1.colliderect(rect2):
             return True
         else:
             return False
@@ -225,18 +227,19 @@ class ai_agent():
                         break
 
             # check collision with bullet
-            for bullet in self.mapinfo[0]:
-                if temp_rect.colliderect(bullet[0]):
-                    move_up = False
-                    break
+            # for bullet in self.mapinfo[0]:
+            #     if temp_rect.colliderect(bullet[0]):
+            #         move_up = False
+            #         break
 
             # check collision with tile
-            for tile in self.mapinfo[2]:
-                # not a grass tile
-                if tile[1] != 4:
-                    if temp_rect.colliderect(tile[0]):
-                        move_up = False
-                        break
+            if move_up:
+                for tile in self.mapinfo[2]:
+                    # not a grass tile
+                    if tile[1] != 4:
+                        if temp_rect.colliderect(tile[0]):
+                            move_up = False
+                            break
 
             if move_up:
                 allowable_move.append((new_left, new_top))
@@ -256,18 +259,19 @@ class ai_agent():
                         break
 
             # check collision with bullet
-            for bullet in self.mapinfo[0]:
-                if temp_rect.colliderect(bullet[0]):
-                    move_right = False
-                    break
+            # for bullet in self.mapinfo[0]:
+            #     if temp_rect.colliderect(bullet[0]):
+            #         move_right = False
+            #         break
 
             # check collision with tile
-            for tile in self.mapinfo[2]:
-                # not a grass tile
-                if tile[1] != 4:
-                    if temp_rect.colliderect(tile[0]):
-                        move_right = False
-                        break
+            if move_right:
+                for tile in self.mapinfo[2]:
+                    # not a grass tile
+                    if tile[1] != 4:
+                        if temp_rect.colliderect(tile[0]):
+                            move_right = False
+                            break
 
             if move_right:
                 allowable_move.append((new_left, new_top))
@@ -287,18 +291,19 @@ class ai_agent():
                         break
 
             # check collision with bullet
-            for bullet in self.mapinfo[0]:
-                if temp_rect.colliderect(bullet[0]):
-                    move_down = False
-                    break
+            # for bullet in self.mapinfo[0]:
+            #     if temp_rect.colliderect(bullet[0]):
+            #         move_down = False
+            #         break
 
-            # check collision with tile
-            for tile in self.mapinfo[2]:
-                # not a grass tile
-                if tile[1] != 4:
-                    if temp_rect.colliderect(tile[0]):
-                        move_down = False
-                        break
+            # check collision with
+            if move_down:
+                for tile in self.mapinfo[2]:
+                    # not a grass tile
+                    if tile[1] != 4:
+                        if temp_rect.colliderect(tile[0]):
+                            move_down = False
+                            break
 
             if move_down:
                 allowable_move.append((new_left, new_top))
@@ -318,18 +323,19 @@ class ai_agent():
                         break
 
             # check collision with bullet
-            for bullet in self.mapinfo[0]:
-                if temp_rect.colliderect(bullet[0]):
-                    move_left = False
-                    break
+            # for bullet in self.mapinfo[0]:
+            #     if temp_rect.colliderect(bullet[0]):
+            #         move_left = False
+            #         break
 
             # check collision with tile
-            for tile in self.mapinfo[2]:
-                # not a grass tile
-                if tile[1] != 4:
-                    if temp_rect.colliderect(tile[0]):
-                        move_left = False
-                        break
+            if move_left:
+                for tile in self.mapinfo[2]:
+                    # not a grass tile
+                    if tile[1] != 4:
+                        if temp_rect.colliderect(tile[0]):
+                            move_left = False
+                            break
 
             if move_left:
                 allowable_move.append((new_left, new_top))
@@ -387,3 +393,134 @@ class ai_agent():
                 return 2
         return False
 
+    def bullet_avoidance(self, player_info, bullet_info_list, c_control):
+
+        return False
+
+
+
+        # player_direction = player_info[1]
+        # player_rect = player_info[0]
+        # for bullet_info in bullet_info_list:
+        #     bullet_direction = bullet_info[1]
+        #     bullet_rect = bullet_info[0]
+        #
+        #     # bullet on left hand size and direction to right
+        #     if bullet_rect.right <= player_rect.left \
+        #             and bullet_direction == 1 \
+        #             and bullet_rect.bottom >= player_rect.top and bullet_rect.top <= player_rect.bottom:  # bullet can shoot player
+        #
+        #         should_avoid = True
+        #         # check if tile in between
+        #         for tile_info in self.mapinfo[2]:
+        #             # not a grass or water tile
+        #             if tile_info[1] != 4 or tile_info[1] != 3:
+        #                 tile_rect = tile_info[0]
+        #                 # tile is between player and bullet
+        #                 if bullet_rect.right <= tile_rect.left and tile_rect.right <= player_rect.right:
+        #                     # tile can block bullet
+        #                     if bullet_rect.bottom >= tile_rect.top and bullet_rect.top <= tile_rect.bottom:
+        #                         should_avoid = False
+        #                         break
+        #         if should_avoid:
+        #             # player can shoot
+        #             if bullet_rect.top <= player_rect.centery <= bullet_rect.bottom:
+        #                 self.Update_Strategy(c_control, 1, 3, 1)
+        #             # run
+        #             else:
+        #                 # run up
+        #                 if not(player_rect.top-2 < 0):
+        #                     move_up = True
+        #                     new_left = player_rect.left
+        #                     new_top = player_rect.top - 2
+        #                     temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+        #
+        #                     # check collision with enemy except goal
+        #                     if move_up:
+        #                         for enemy in self.mapinfo[1]:
+        #                             if temp_rect.colliderect(enemy[0]):
+        #                                 move_up = False
+        #                                 break
+        #
+        #                     # check collision with bullet
+        #                     if move_up:
+        #                         for bullet in self.mapinfo[0]:
+        #                             if temp_rect.colliderect(bullet[0]):
+        #                                 move_up = False
+        #                                 break
+        #
+        #                     # check collision with tile
+        #                     if move_up:
+        #                         for tile in self.mapinfo[2]:
+        #                             # not a grass tile
+        #                             if tile[1] != 4:
+        #                                 if temp_rect.colliderect(tile[0]):
+        #                                     move_up = False
+        #                                     break
+        #                     if move_up:
+        #                         self.Update_Strategy(c_control, 0, 0, 1)
+        #                     else:
+        #                         self.Update_Strategy(c_control, 0, 2, 1)
+        #                 # else run down
+        #                 else:
+        #                     self.Update_Strategy(c_control, 0, 2, 1)
+        #
+        #     # bullet on right hand size and direction to left
+        #     elif player_rect.right <= bullet_rect.left \
+        #             and bullet_direction == 6 \
+        #             and bullet_rect.bottom >= player_rect.top and bullet_rect.top <= player_rect.bottom:  # bullet can shoot player
+        #
+        #         should_avoid = True
+        #         # check if tile in between
+        #         for tile_info in self.mapinfo[2]:
+        #             # not a grass or water tile
+        #             if tile_info[1] != 4 or tile_info[1] != 3:
+        #                 tile_rect = tile_info[0]
+        #                 # tile is between player and bullet
+        #                 if player_rect.right <= tile_rect.left and tile_rect.right <= bullet_rect.right:
+        #                     # tile can block bullet
+        #                     if bullet_rect.bottom >= tile_rect.top and bullet_rect.top <= tile_rect.bottom:
+        #                         should_avoid = False
+        #                         break
+        #         if should_avoid:
+        #             # player can shoot
+        #             if bullet_rect.top <= player_rect.centery <= bullet_rect.bottom:
+        #                 self.Update_Strategy(c_control, 1, 3, 1)
+        #             # run
+        #             else:
+        #                 # run up
+        #                 if not (player_rect.top - 2 < 0):
+        #                     move_up = True
+        #                     new_left = player_rect.left
+        #                     new_top = player_rect.top - 2
+        #                     temp_rect = pygame.Rect(new_left, new_top, 26, 26)
+        #
+        #                     # check collision with enemy except goal
+        #                     if move_up:
+        #                         for enemy in self.mapinfo[1]:
+        #                             if temp_rect.colliderect(enemy[0]):
+        #                                 move_up = False
+        #                                 break
+        #
+        #                     # check collision with bullet
+        #                     if move_up:
+        #                         for bullet in self.mapinfo[0]:
+        #                             if temp_rect.colliderect(bullet[0]):
+        #                                 move_up = False
+        #                                 break
+        #
+        #                     # check collision with tile
+        #                     if move_up:
+        #                         for tile in self.mapinfo[2]:
+        #                             # not a grass tile
+        #                             if tile[1] != 4:
+        #                                 if temp_rect.colliderect(tile[0]):
+        #                                     move_up = False
+        #                                     break
+        #                     if move_up:
+        #                         self.Update_Strategy(c_control, 0, 0, 1)
+        #                     else:
+        #                         self.Update_Strategy(c_control, 0, 2, 1)
+        #                 # else run down
+        #                 else:
+        #                     self.Update_Strategy(c_control, 0, 2, 1)

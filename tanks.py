@@ -1453,7 +1453,7 @@ class Game():
         del gtimer.timers[:]
 
         # set current stage to 0
-        self.stage = 1
+        self.stage = 3
 
         self.animateIntroScreen()
 
