@@ -50,31 +50,26 @@ class ai_agent():
         while True:
             # -----your ai operation,This code is a random strategy,please design your ai !!-----------------------
             self.Get_mapInfo(p_mapinfo)
+            player_rect = self.mapinfo[3][0][0]
             sorted_enemy = sorted(self.mapinfo[1],
                                   key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12 * 16, 24 * 16)))
 
-            enemy_rect_list = self.mapinfo[1]
+
             # activate a_star when enemy appear
             if sorted_enemy:
                 # print 'enemy found!'
-                player_rect = self.mapinfo[3][0][0]
                 enemy_rect = sorted_enemy[0][0]
-                player_speed = self.mapinfo[3][0][2]
-                dir_cmd = self.a_star(player_rect, enemy_rect, 4)
+                dir_cmd = self.a_star(player_rect, enemy_rect, 6)
                 inline_dir = self.inline_with_enemy(player_rect, enemy_rect)
                 shoot = 0
                 if inline_dir is not False:
                     shoot = 1
                     self.Update_Strategy(c_control, shoot, inline_dir, 1)
-                    pygame.time.Clock().tick(50)
+                    time.sleep(pygame.time.Clock().tick(50)*0.001)
                 print dir_cmd
-                if dir_cmd:
-                    self.Update_Strategy(c_control, shoot, dir_cmd[0], 1)
-                    pygame.time.Clock().tick(50)
-                # if dir_cmd:
-                #     self.Update_Strategy(c_control, 0, dir_cmd[0], 0)
-                # else:
-                #     self.Update_Strategy(c_control, 0, random.randint(0,4), 0)
+                if dir_cmd is not None:
+                    self.Update_Strategy(c_control, shoot, dir_cmd, 1)
+                    time.sleep(pygame.time.Clock().tick(50)*0.001)
                 # ------------------------------------------------------------------------------------------------------
 
     def Get_mapInfo(self, p_mapinfo):
@@ -86,23 +81,15 @@ class ai_agent():
 
     def Update_Strategy(self, c_control, shoot, move_dir, keep_action):
         if c_control.empty() == True:
-            c_control.put([shoot, move_dir, keep_action])
+            c_control.put([shoot, move_dir])
             return True
         else:
             return False
 
-    def should_fire(self, player_rect, enemy_rect_list):
-        for enemy_rect in enemy_rect_list:
-            if self.inline_with_enemy(player_rect, enemy_rect[0]):
+    def should_fire(self, player_rect, enemy_rect_info_list):
+        for enemy_rect_info in enemy_rect_info_list:
+            if self.inline_with_enemy(player_rect, enemy_rect_info[0]):
                 return True
-            # player_center_x, player_center_y = player_rect.center
-            # enemy_top = enemy_rect[0].top
-            # enemy_bottom = enemy_rect[0].bottom
-            # enemy_left = enemy_rect[0].left
-            # enemy_right = enemy_rect[0].right
-            # if (enemy_left <= player_center_x <= enemy_right) \
-            #         or (enemy_top <= player_center_y <= enemy_bottom):
-            #     return True
 
     # A* algorithm, return a series of command to reach enemy
     def a_star(self, start_rect, goal_rect, speed):
@@ -142,49 +129,48 @@ class ai_agent():
                     came_from[next] = current
 
         # build path
-        path = [current]
-        dir_cmd = []
-        while current != start:
-            parent = came_from[current]
-            parent_left, parent_top = parent
-            current_left, current_top = current
-            # up
-            if current_top < parent_top:
-                dir_cmd.append(0)
-            # down
-            elif current_top > parent_top:
-                dir_cmd.append(2)
-            # left
-            elif current_left < parent_left:
-                dir_cmd.append(3)
-            # right
-            elif current_left > parent_left:
-                dir_cmd.append(1)
-            current = came_from[current]
-            path.append(current)
-        path.reverse()
-        dir_cmd.reverse()
-
-        # # build command
         # dir_cmd = []
-        # current = start
-        # for pos in path:
+        # while current != start:
+        #     parent = came_from[current]
+        #     parent_left, parent_top = parent
         #     current_left, current_top = current
-        #     pos_left, pos_top = pos
         #     # up
-        #     if pos_top < current_top:
+        #     if current_top < parent_top:
         #         dir_cmd.append(0)
         #     # down
-        #     elif pos_top > current_top:
+        #     elif current_top > parent_top:
         #         dir_cmd.append(2)
         #     # left
-        #     elif pos_left < current_left:
+        #     elif current_left < parent_left:
         #         dir_cmd.append(3)
         #     # right
-        #     elif pos_left > current_left:
+        #     elif current_left > parent_left:
         #         dir_cmd.append(1)
-        #     current = pos
+        #     current = came_from[current]
+        # dir_cmd.reverse()
 
+        # return the first move is enough
+        next = None
+        dir_cmd = None
+        while current != start:
+            next = current
+            current = came_from[current]
+
+        if next:
+            next_left, next_top = next
+            current_left, current_top = current
+            # up
+            if current_top > next_top:
+                dir_cmd = 0
+            # down
+            elif current_top < next_top:
+                dir_cmd = 2
+            # left
+            elif current_left > next_left:
+                dir_cmd = 3
+            # right
+            elif current_left < next_left:
+                dir_cmd = 1
         return dir_cmd
 
     def manhattan_distance(self, a, b):
