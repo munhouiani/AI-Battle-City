@@ -6,6 +6,7 @@ import pygame
 import math
 import Queue
 
+
 class PriorityQueue:
     def __init__(self):
         self.elements = []
@@ -23,7 +24,7 @@ class PriorityQueue:
 class ai_agent():
     mapinfo = []
     # castle rect
-    castle = pygame.Rect(12 * 16, 24 * 16, 32, 32)
+    castle_rect = pygame.Rect(12 * 16, 24 * 16, 32, 32)
 
     def __init__(self):
         self.mapinfo = []
@@ -51,25 +52,57 @@ class ai_agent():
             # -----your ai operation,This code is a random strategy,please design your ai !!-----------------------
             self.Get_mapInfo(p_mapinfo)
             player_rect = self.mapinfo[3][0][0]
-            sorted_enemy = sorted(self.mapinfo[1],
-                                  key=lambda x: self.manhattan_distance((x[0].left, x[0].top), (12 * 16, 24 * 16)))
-            # sorted_enemy = self.mapinfo[1]
-            # activate a_star when enemy appear
-            if sorted_enemy:
-                # check if inline with enemy
-                inline_dir = False
-                for enemy_info in sorted_enemy:
-                    inline_dir = self.inline_with_enemy(player_rect, enemy_info[0])
-                    if inline_dir is not False:
-                        break
-                # shoot if inline with enemy
-                if inline_dir is not False:
-                    self.Update_Strategy(c_control, 1, inline_dir, 1)
-                # else trigger a star
+            # sort enemy with manhattan distance to castle
+
+            sorted_enemy_with_distance_to_castle = sorted(self.mapinfo[1],
+                                                          key=lambda x: self.manhattan_distance(x[0].topleft,
+                                                                                                self.castle_rect.topleft))
+            # sort enemy with manhattan distance to player current position
+            sorted_enemy_with_distance_to_player = sorted(self.mapinfo[1],
+                                                          key=lambda x: self.manhattan_distance(x[0].topleft,
+                                                                                                player_rect.topleft))
+            # exists enemy
+            if sorted_enemy_with_distance_to_castle:
+                # if enemy distance with castle < 50, chase it
+                if self.manhattan_distance(sorted_enemy_with_distance_to_castle[0][0].topleft, self.castle_rect.topleft) < 50:
+                    enemy_rect = sorted_enemy_with_distance_to_castle[0][0]
+                    enemy_direction = sorted_enemy_with_distance_to_castle[0][1]
+                # else chase the nearest enemy to player
                 else:
-                    dir_cmd = self.a_star(player_rect, sorted_enemy[0][0], 6)
-                    if dir_cmd is not None:
-                        self.Update_Strategy(c_control, 0, dir_cmd, 1)
+                    enemy_rect = sorted_enemy_with_distance_to_player[0][0]
+                    enemy_direction = sorted_enemy_with_distance_to_player[0][1]
+
+                # check if inline with enemy
+                inline_direction = self.inline_with_enemy(player_rect, enemy_rect)
+
+                # perform a star
+                astar_direction = self.a_star(player_rect, enemy_rect, 6)
+
+                # perform bullet avoidance
+                shoot, direction = self.bullet_avoidance(self.mapinfo[3][0], 6, self.mapinfo[0], astar_direction, inline_dir)
+
+                # update strategy
+                self.Update_Strategy(c_control, shoot, direction, 1)
+
+            # go to default position
+            else:
+
+            # # activate a_star when enemy appear
+            # if sorted_enemy:
+            #     # check if inline with enemy
+            #     inline_dir = False
+            #     for enemy_info in sorted_enemy:
+            #         inline_dir = self.inline_with_enemy(player_rect, enemy_info[0])
+            #         if inline_dir is not False:
+            #             break
+            #     # shoot if inline with enemy
+            #     if inline_dir is not False:
+            #         self.Update_Strategy(c_control, 1, inline_dir, 1)
+            #     # else trigger a star
+            #     else:
+            #         dir_cmd = self.a_star(player_rect, sorted_enemy[0][0], 6)
+            #         if dir_cmd is not None:
+            #             self.Update_Strategy(c_control, 0, dir_cmd, 1)
 
 
                 # print 'enemy found!'
@@ -430,134 +463,154 @@ class ai_agent():
         #         return 2
         # return False
 
-    def bullet_avoidance(self, player_info, bullet_info_list, c_control):
+    def bullet_avoidance(self, player_info, speed, bullet_info_list, direction_from_astar, inlined_with_enemy):
+        # possible direction list
+        directions = []
 
-        return False
+        # player rect
+        player_rect = player_info[0]
+
+        # sort bullet by euclidean distance with player
+        sorted_bullet_info_list = sorted(bullet_info_list, key=lambda x: self.euclidean_distance((x[0].left, x[0].top), (player_rect.centerx, player_rect.centery)))
+
+        # default shoot
+        shoot = 0
+
+        # default minimal distance with bullet, infinity
+        if sorted_bullet_info_list:
+            min_dist_with_bullet = self.euclidean_distance((sorted_bullet_info_list[0][0].left, sorted_bullet_info_list[0][0].top), (player_rect.centerx, player_rect.centery))
+        else:
+            min_dist_with_bullet = float(1e30000)
+
+        # trigger when bullet distance with player >= 100
+        if min_dist_with_bullet >= 100:
+            # pick the nearest bullet
+            bullet_rect = sorted_bullet_info_list[0][0]
+            bullet_direction = sorted_bullet_info_list[0][1]
+            # distance with center x <= 20
+            if abs(bullet_rect.left+1 - player_rect.centerx) <= 20:
+                # distance with center x <= 2
+                if abs(bullet_rect.left+1 - player_rect.centerx) <= 2:
+                    # bullet direction to up, on player's bottom
+                    if bullet_direction == 0 and bullet_rect.top > player_rect.top:
+                        # add direction to down
+                        directions.append(2)
+                        # shoot
+                        shoot = 1
+                        print 'block bullet from down'
+                    # direction to down, on player's top
+                    if bullet_direction == 2 and bullet_rect.top < player_rect.top:
+                        # add direction to up
+                        directions.append(0)
+                        # shoot
+                        shoot = 1
+                        print 'block bullet from up'
+                # not too near
+                else:
+                    # if bullet on player's right
+                    if bullet_rect.left > player_rect.centerx:
+                        # go left
+                        directions.append(3)
+                        # go right
+                        directions.append(1)
+                        print 'go left, skip bullet'
+                    else:
+                        # go right
+                        directions.append(1)
+                        # go left
+                        directions.append(3)
+                        print 'go right, skip bullet'
+            # distance with center y <= 20
+            elif abs(bullet_rect.top+1 - player_rect.centery) <= 20:
+                # distance with center y <= 2
+                if abs(bullet_rect.top+1 - player_rect.centery) <= 2:
+                    # bullet direction to right, on player's left
+                    if bullet_direction == 1 and bullet_rect.left < player_rect.left:
+                        # go left
+                        directions.append(3)
+                        # shoot
+                        shoot = 1
+                        print 'block bullet from left'
+                    # bullet direction to left, on player's right
+                    if bullet_direction == 3 and bullet_rect.left > player_rect.left:
+                        # go right
+                        directions.append(1)
+                        # shoot
+                        shoot = 1
+                        print 'block bullet from right'
+                # not too near
+                else:
+                    # on player bottom
+                    if bullet_rect.top > player_rect.centery:
+                        directions.append(0)
+                        directions.append(2)
+                        print 'go up, skip bullet'
+                    else:
+                        directions.append(2)
+                        directions.append(0)
+                        print 'go down, skip bullet'
+            # neither distance with center x or center y <= 20
+            else:
+                # inline with enemy direction is same as a star direction
+                if inlined_with_enemy == direction_from_astar:
+                    shoot = 1
+                directions.append(direction_from_astar)
+
+                # bullet direction down or up
+                if bullet_direction == 0 or bullet_direction == 2:
+                    # bullet on right hand side
+                    if bullet_rect.left > player_rect.left:
+                        if 1 in directions:
+                            directions.remove(1)
+                        print 'bullet on rhs, don\'t go right'
+                    else:
+                        if 3 in directions:
+                            directions.remove(3)
+                        print 'bullet on lhs, don\'t go left'
+                # bullet direction to left or right
+                if bullet_direction == 1 or bullet_direction == 3:
+                    # bullet on bottom
+                    if bullet_rect.top > player_rect.top:
+                       if 2 in directions:
+                           directions.remove(2)
+                        print 'bullet on bottom, don\'t go down'
+                    else:
+                        if 0 in directions:
+                            directions.remove(0)
+                        print 'bullt on top, don\'t go up'
+        # distance with nearest bullet > 100 (threshold)
+        else:
+            # if inlined
+            if inlined_with_enemy == direction_from_astar:
+                shoot = 1
+            directions.append(direction_from_astar)
+
+        if directions:
+            for direction in directions:
+                # go up
+                if direction == 0:
+                    new_left = player_rect.left
+                    new_top = player_rect.top - speed
+                # go right
+                elif direction == 1:
+                    new_left = player_rect.left + speed
+                    new_top = player_rect.top
+                # go down
+                elif direction == 2:
+                    new_left = player_rect.left
+                    new_top = player_rect.top + speed
+                # go left
+                elif direction == 3:
+                    new_left = player_rect.left - speed
+                    new_top = player_rect.top
+                # no change
+                else:
+                    new_top = player_rect.top
+                    new_left = player_rect.left
+
+                # check collision with tile
+                for tile_info in self.mapinfo[2]:
 
 
 
-        # player_direction = player_info[1]
-        # player_rect = player_info[0]
-        # for bullet_info in bullet_info_list:
-        #     bullet_direction = bullet_info[1]
-        #     bullet_rect = bullet_info[0]
-        #
-        #     # bullet on left hand size and direction to right
-        #     if bullet_rect.right <= player_rect.left \
-        #             and bullet_direction == 1 \
-        #             and bullet_rect.bottom >= player_rect.top and bullet_rect.top <= player_rect.bottom:  # bullet can shoot player
-        #
-        #         should_avoid = True
-        #         # check if tile in between
-        #         for tile_info in self.mapinfo[2]:
-        #             # not a grass or water tile
-        #             if tile_info[1] != 4 or tile_info[1] != 3:
-        #                 tile_rect = tile_info[0]
-        #                 # tile is between player and bullet
-        #                 if bullet_rect.right <= tile_rect.left and tile_rect.right <= player_rect.right:
-        #                     # tile can block bullet
-        #                     if bullet_rect.bottom >= tile_rect.top and bullet_rect.top <= tile_rect.bottom:
-        #                         should_avoid = False
-        #                         break
-        #         if should_avoid:
-        #             # player can shoot
-        #             if bullet_rect.top <= player_rect.centery <= bullet_rect.bottom:
-        #                 self.Update_Strategy(c_control, 1, 3, 1)
-        #             # run
-        #             else:
-        #                 # run up
-        #                 if not(player_rect.top-2 < 0):
-        #                     move_up = True
-        #                     new_left = player_rect.left
-        #                     new_top = player_rect.top - 2
-        #                     temp_rect = pygame.Rect(new_left, new_top, 26, 26)
-        #
-        #                     # check collision with enemy except goal
-        #                     if move_up:
-        #                         for enemy in self.mapinfo[1]:
-        #                             if temp_rect.colliderect(enemy[0]):
-        #                                 move_up = False
-        #                                 break
-        #
-        #                     # check collision with bullet
-        #                     if move_up:
-        #                         for bullet in self.mapinfo[0]:
-        #                             if temp_rect.colliderect(bullet[0]):
-        #                                 move_up = False
-        #                                 break
-        #
-        #                     # check collision with tile
-        #                     if move_up:
-        #                         for tile in self.mapinfo[2]:
-        #                             # not a grass tile
-        #                             if tile[1] != 4:
-        #                                 if temp_rect.colliderect(tile[0]):
-        #                                     move_up = False
-        #                                     break
-        #                     if move_up:
-        #                         self.Update_Strategy(c_control, 0, 0, 1)
-        #                     else:
-        #                         self.Update_Strategy(c_control, 0, 2, 1)
-        #                 # else run down
-        #                 else:
-        #                     self.Update_Strategy(c_control, 0, 2, 1)
-        #
-        #     # bullet on right hand size and direction to left
-        #     elif player_rect.right <= bullet_rect.left \
-        #             and bullet_direction == 6 \
-        #             and bullet_rect.bottom >= player_rect.top and bullet_rect.top <= player_rect.bottom:  # bullet can shoot player
-        #
-        #         should_avoid = True
-        #         # check if tile in between
-        #         for tile_info in self.mapinfo[2]:
-        #             # not a grass or water tile
-        #             if tile_info[1] != 4 or tile_info[1] != 3:
-        #                 tile_rect = tile_info[0]
-        #                 # tile is between player and bullet
-        #                 if player_rect.right <= tile_rect.left and tile_rect.right <= bullet_rect.right:
-        #                     # tile can block bullet
-        #                     if bullet_rect.bottom >= tile_rect.top and bullet_rect.top <= tile_rect.bottom:
-        #                         should_avoid = False
-        #                         break
-        #         if should_avoid:
-        #             # player can shoot
-        #             if bullet_rect.top <= player_rect.centery <= bullet_rect.bottom:
-        #                 self.Update_Strategy(c_control, 1, 3, 1)
-        #             # run
-        #             else:
-        #                 # run up
-        #                 if not (player_rect.top - 2 < 0):
-        #                     move_up = True
-        #                     new_left = player_rect.left
-        #                     new_top = player_rect.top - 2
-        #                     temp_rect = pygame.Rect(new_left, new_top, 26, 26)
-        #
-        #                     # check collision with enemy except goal
-        #                     if move_up:
-        #                         for enemy in self.mapinfo[1]:
-        #                             if temp_rect.colliderect(enemy[0]):
-        #                                 move_up = False
-        #                                 break
-        #
-        #                     # check collision with bullet
-        #                     if move_up:
-        #                         for bullet in self.mapinfo[0]:
-        #                             if temp_rect.colliderect(bullet[0]):
-        #                                 move_up = False
-        #                                 break
-        #
-        #                     # check collision with tile
-        #                     if move_up:
-        #                         for tile in self.mapinfo[2]:
-        #                             # not a grass tile
-        #                             if tile[1] != 4:
-        #                                 if temp_rect.colliderect(tile[0]):
-        #                                     move_up = False
-        #                                     break
-        #                     if move_up:
-        #                         self.Update_Strategy(c_control, 0, 0, 1)
-        #                     else:
-        #                         self.Update_Strategy(c_control, 0, 2, 1)
-        #                 # else run down
-        #                 else:
-        #                     self.Update_Strategy(c_control, 0, 2, 1)
+
