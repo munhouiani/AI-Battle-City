@@ -53,18 +53,27 @@ class ai_agent():
             # sort enemy with manhattan distance to castle
 
             sorted_enemy_with_distance_to_castle = sorted(self.mapinfo[1],
-                                                          key=lambda x: self.manhattan_distance(x[0].topleft,
-                                                                                                self.castle_rect.topleft))
+                                                          key=lambda x: self.manhattan_distance(x[0].center,
+                                                                                                self.castle_rect.center))
             # sort enemy with manhattan distance to player current position
             sorted_enemy_with_distance_to_player = sorted(self.mapinfo[1],
-                                                          key=lambda x: self.manhattan_distance(x[0].topleft,
-                                                                                                player_rect.topleft))
+                                                          key=lambda x: self.manhattan_distance(x[0].center,
+                                                                                                player_rect.center))
+
+            # obstacle list
+            obstacles = []
+            for tile_info in self.mapinfo[2]:
+                tile_rect = tile_info[0]
+                tile_type = tile_info[1]
+                # if it is not a grass
+                if tile_type != 4:
+                    obstacles.append(tile_rect)
 
             # default position
             default_pos_rect = pygame.Rect(195, 3, 26, 26)
             # exists enemy
             if sorted_enemy_with_distance_to_castle:
-                # if enemy distance with castle < 50, chase it
+                # if enemy distance with castle < 150, chase it
                 if self.manhattan_distance(sorted_enemy_with_distance_to_castle[0][0].topleft, self.castle_rect.topleft) < 150:
                     enemy_rect = sorted_enemy_with_distance_to_castle[0][0]
                     enemy_direction = sorted_enemy_with_distance_to_castle[0][1]
@@ -80,23 +89,22 @@ class ai_agent():
                 astar_direction = self.a_star(player_rect, enemy_rect, 6)
 
                 # perform bullet avoidance
-                shoot, direction = self.bullet_avoidance(self.mapinfo[3][0], 6, self.mapinfo[0], astar_direction, inline_direction)
+                shoot, direction = self.bullet_avoidance(self.mapinfo[3][0], 6, self.mapinfo[0], astar_direction, inline_direction, obstacles)
 
                 # update strategy
                 self.Update_Strategy(c_control, shoot, direction)
-                time.sleep(0.001)
+                time.sleep(0.005)
 
             # go to default position
             else:
                 # perform a star
-                astar_direction = self.a_star(player_rect, default_pos_rect, 4)
+                astar_direction = self.a_star(player_rect, default_pos_rect, 6)
 
                 # update strategy
                 if astar_direction is not None:
                     self.Update_Strategy(c_control, 0, astar_direction)
                     time.sleep(0.001)
                 else:
-                    self.Update_Strategy(c_control, 0, 2)
                     self.Update_Strategy(c_control, 0, 4)
                     time.sleep(0.001)
 
@@ -363,7 +371,7 @@ class ai_agent():
 
     def inline_with_enemy(self, player_rect, enemy_rect):
         # vertical inline
-        if enemy_rect.left <= player_rect.centerx <= enemy_rect.right and abs(player_rect.top - enemy_rect.bottom) <= 140:
+        if enemy_rect.left <= player_rect.centerx <= enemy_rect.right and abs(player_rect.top - enemy_rect.bottom) <= 147:
             # enemy on top
             if enemy_rect.bottom <= player_rect.top:
                 print('enemy on top')
@@ -373,7 +381,7 @@ class ai_agent():
                 print('enemy on bottom')
                 return 2
         # horizontal inline
-        if enemy_rect.top <= player_rect.centery <= enemy_rect.bottom and abs(player_rect.left - enemy_rect.right) <= 140:
+        if enemy_rect.top <= player_rect.centery <= enemy_rect.bottom and abs(player_rect.left - enemy_rect.right) <= 147:
             # enemy on left
             if enemy_rect.right <= player_rect.left:
                 print('enemy on left')
@@ -384,7 +392,7 @@ class ai_agent():
                 return 1
         return False
 
-    def bullet_avoidance(self, player_info, speed, bullet_info_list, direction_from_astar, inlined_with_enemy):
+    def bullet_avoidance(self, player_info, speed, bullet_info_list, direction_from_astar, inlined_with_enemy, obstacles):
         # possible direction list
         directions = []
 
@@ -409,9 +417,9 @@ class ai_agent():
             bullet_rect = sorted_bullet_info_list[0][0]
             bullet_direction = sorted_bullet_info_list[0][1]
             # distance with center x <= 20
-            if abs(bullet_rect.left+1 - player_rect.centerx) <= 20:
+            if abs(bullet_rect.left+1 - player_rect.centerx) <= 25:
                 # distance with center x <= 2
-                if abs(bullet_rect.left+1 - player_rect.centerx) <= 2:
+                if abs(bullet_rect.left+1 - player_rect.centerx) <= 5:
                     # bullet direction to up, on player's bottom
                     if bullet_direction == 0 and bullet_rect.top > player_rect.top:
                         # add direction to down
@@ -442,9 +450,9 @@ class ai_agent():
                         directions.append(3)
                         print 'go right, skip bullet'
             # distance with center y <= 20
-            elif abs(bullet_rect.top+1 - player_rect.centery) <= 20:
+            elif abs(bullet_rect.top+1 - player_rect.centery) <= 25:
                 # distance with center y <= 2
-                if abs(bullet_rect.top+1 - player_rect.centery) <= 2:
+                if abs(bullet_rect.top+1 - player_rect.centery) <= 5:
                     # bullet direction to right, on player's left
                     if bullet_direction == 1 and bullet_rect.left < player_rect.left:
                         # go left
@@ -531,24 +539,33 @@ class ai_agent():
 
                 temp_rect = pygame.Rect(new_left, new_top, 26, 26)
                 # check collision with tile
-                for tile_info in self.mapinfo[2]:
-                    tile_rect = tile_info[0]
-                    tile_type = tile_info[1]
-                    # if collide with not a grass tile
-                    if tile_type != 4 and tile_rect.colliderect(temp_rect):
-                        # collide with a brick tile
-                        if tile_type == 1:
-                            # inlined with enemy
-                            if inlined_with_enemy == direction_from_astar:
-                                shoot = 1
+
+                if 0 <= new_top <= 416 - 26 and 0 <= new_left <= 416 - 26:
+                    collision = False
+                    for tile_info in self.mapinfo[2]:
+                        tile_rect = tile_info[0]
+                        tile_type = tile_info[1]
+                        if tile_type != 4:
+                            if temp_rect.colliderect(tile_rect):
+                                collision = True
                                 break
-                            else:
-                                break
-                return shoot, direction
+                    if collision:
+                        if inlined_with_enemy == direction_from_astar:
+                            shoot = 1
+                            break
+                    else:
+                        return shoot, direction
+                    # collision = temp_rect.collidelist(obstacles)
+                    # if collision:
+                    #     if inlined_with_enemy == direction_from_astar:
+                    #         shoot = 1
+                    #         break
+                    # else:
+                    #     return shoot, direction
         # no direction appended
         else:
             return shoot, 4
-        return shoot, None
+        return shoot, direction_from_astar
 
 
 
