@@ -84,19 +84,21 @@ class ai_agent():
 
                 # update strategy
                 self.Update_Strategy(c_control, shoot, direction)
-                time.sleep(0.006)
-
-
+                time.sleep(0.001)
 
             # go to default position
             else:
                 # perform a star
-                astar_direction = self.a_star(player_rect, default_pos_rect, 6)
+                astar_direction = self.a_star(player_rect, default_pos_rect, 4)
 
                 # update strategy
                 if astar_direction is not None:
                     self.Update_Strategy(c_control, 0, astar_direction)
-                    time.sleep(0.006)
+                    time.sleep(0.001)
+                else:
+                    self.Update_Strategy(c_control, 0, 2)
+                    self.Update_Strategy(c_control, 0, 4)
+                    time.sleep(0.001)
 
             # ------------------------------------------------------------------------------------------------------
 
