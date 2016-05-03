@@ -103,10 +103,10 @@ class ai_agent():
                 # update strategy
                 if astar_direction is not None:
                     self.Update_Strategy(c_control, 0, astar_direction)
-                    time.sleep(0.001)
+                    # time.sleep(0.001)
                 else:
-                    self.Update_Strategy(c_control, 0, 4)
-                    time.sleep(0.001)
+                    self.Update_Strategy(c_control, 0, 0)
+                    # time.sleep(0.001)
 
             # ------------------------------------------------------------------------------------------------------
 
@@ -412,7 +412,7 @@ class ai_agent():
             min_dist_with_bullet = float(1e30000)
 
         # trigger when bullet distance with player <= 100
-        if min_dist_with_bullet <= 100:
+        if min_dist_with_bullet <= 120:
             # pick the nearest bullet
             bullet_rect = sorted_bullet_info_list[0][0]
             bullet_direction = sorted_bullet_info_list[0][1]
@@ -441,13 +441,13 @@ class ai_agent():
                         # go left
                         directions.append(3)
                         # go right
-                        directions.append(1)
+                        # directions.append(1)
                         print 'go left, skip bullet'
                     else:
                         # go right
                         directions.append(1)
                         # go left
-                        directions.append(3)
+                        # directions.append(3)
                         print 'go right, skip bullet'
             # distance with center y <= 20
             elif abs(bullet_rect.top+1 - player_rect.centery) <= 25:
